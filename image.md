@@ -1,4 +1,4 @@
-# Multimodal Dataset Classification
+# Image Dataset Classification
 
 **Group:** LTH (252)  
 **Course:** Deep Learning (CO3021)  
@@ -8,26 +8,26 @@
 
 ## 1. Dataset Exploration & Preprocessing
 
-### 📊 Dataset Overview: MMIMDb
+### 📊 Dataset Overview: CIFAR10
 
-The project utilizes the **MMIMDb (Multi-Modal IMDb)** dataset, a standard benchmark for multimodal classification tasks. The primary objective is to predict movie genres by integrating visual information (movie posters) and textual information (plot summaries).
+The project utilizes the **CIFAR10 (Canadian Institute For Advanced Research - 10)** dataset, a standard benchmark for image classification tasks. The primary objective is to evaluate and compare the performance of CNN and Vision Transformer (ViT) architectures.
 
-- **Data Source:** [Hugging Face - MMIMDb Dataset](https://huggingface.co/datasets/sxj1215/mmimdb)
-- **Problem Type:** Multi-label classification
+- **Data Source:** [Hugging Face - CIFAR10 Dataset](https://huggingface.co/datasets/uoft-cs/cifar10)
+- **Problem Type:** Image classification
 
 #### Key Statistics:
 
 | Metric                      | Value                              |
 | :-------------------------- | :--------------------------------- |
-| **Total Samples**           | 15,552                             |
-| **Unique Classes (Genres)** | 26                                 |
-| **Modalities**              | Visual (Posters) & Textual (Plots) |
+| **Total Samples**           | 60,000 (50,000 train + 10,000 test)|
+| **Unique Classes (Genres)** | 10                                 |
+| **Modalities**              | Visual Information (Image)         |
 
 #### Data Characteristics:
 
-- **Textual Data:** The `plot` attribute provides a concise summary of the movie's main storyline.
-- **Visual Data:** The `images` attribute contains official movie posters, reflecting the artistic style and color palette characteristic of each genre.
-- **Label Distribution:** The most frequent genres are **Drama** (8,424 samples), **Comedy** (5,108 samples), and **Romance** (3,226 samples).
+- **Visual Data:** The `img` attribute consists of color images with a native resolution of $32 \times 32$ pixels, representing 10 distinct object categories.
+- **Label Distribution:** The dataset is perfectly balanced, with each of the 10 classes containing exactly 6,000 samples (5,000 for training and 1,000 for testing).
+- **Color Profile:** Pixel intensity analysis shows a non-uniform distribution across channels, specifically a high frequency in the Blue channel (~70 intensity), likely due to sky or water backgrounds.
 
 ---
 
