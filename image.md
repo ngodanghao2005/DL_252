@@ -35,7 +35,7 @@ The project utilizes the **CIFAR10 (Canadian Institute For Advanced Research - 1
 
 The CIFAR-10 dataset structure maps low-resolution visual imagery to 10 mutually exclusive semantic categories:
 
-![Dataset Sample Preview](./public/dataset.png)  
+![Dataset Sample Preview](./public/datasets.png)  
 _Figure 1: Preview of the CIFAR10 dataset structure displaying the mapping between raw 32 × 32 pixel imagery and their corresponding semantic class labels._
 
 ---
