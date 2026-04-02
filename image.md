@@ -33,44 +33,39 @@ The project utilizes the **CIFAR10 (Canadian Institute For Advanced Research - 1
 
 ### 🖼️ Dataset Preview
 
-The MMIMDb dataset structure combines textual content with visual imagery:
+The CIFAR-10 dataset structure maps low-resolution visual imagery to 10 mutually exclusive semantic categories:
 
-![Dataset Sample Preview](./public/multimodal/dataset.png)  
-_Figure 1: Preview of the MMIMDb dataset structure displaying plot summaries and corresponding movie posters._
+![Dataset Sample Preview](./public/dataset.png)  
+_Figure 1: Preview of the CIFAR10 dataset structure displaying the mapping between raw 32 × 32 pixel imagery and their corresponding semantic class labels._
 
 ---
 
 ## 2. In-depth Exploratory Data Analysis (EDA)
 
-To understand the complexity of the MMIMDb dataset, we conducted a comprehensive analysis focusing on label distribution, multi-label characteristics, and textual features.
+To understand the complexity of the CIFAR10 dataset, we conducted a comprehensive analysis focusing on class balance, pixel intensity distributions, and semantic similarities between object categories.
 
-### 📊 Genre Distribution & Class Imbalance
+### 📊 Class Distribution & Balance
 
-Analysis of the 26 unique genres reveals a significant **Long-tail distribution**. Dominant genres comprise the majority of the dataset, while niche genres like _Film-Noir_ have significantly fewer samples, presenting a challenge for model convergence.
+Analysis of the 10 unique categories reveals a **perfectly balanced distribution**. Unlike many real-world datasets, each class contains exactly 5,000 training and 1,000 testing samples, eliminating the need for oversampling or class-weighted loss functionse.
 
-![Genre Distribution Chart](./public/multimodal/genre_distribution.png)  
-_Figure 2: Distribution of samples across 26 movie genres, highlighting the class imbalance._
+![Class Distribution Chart - Training](./public/training_samples.png)  
+_Figure 2: Balanced distribution of training samples across 10 object categories._
+![Class Distribution Chart - Testing](./public/training_samples.png)  
+_Figure 3: Balanced distribution of testing samples across 10 object categories._
 
-### 🏷️ Multi-label Characteristics
+### 🏷️ Statistical Color Profiling (Pixel Distribution)
 
-MMIMDb is inherently multi-label. Our analysis shows that most movies are associated with **2 to 3 genres** simultaneously. This overlap requires the model to capture complex relationships between different categories.
+Our analysis of raw pixel intensities across RGB channels reveals a dominant Blue channel (~70 intensity), suggesting a high frequency of cool-toned backgrounds (sky, water). A sharp spike at 255 across all channels indicates saturated regions or bright highlights.
 
-![Genres per Movie Chart](./public/multimodal/labels_per_movie.png)  
-_Figure 3: Frequency of the number of labels assigned per movie._
+![RGB Pixel Intensity Distribution](./public/RGB.png)  
+_Figure 4: RGB Pixel Intensity Distribution highlighting the non-uniformity across color channels._
 
-### 🔗 Genre Correlation (Co-occurrence)
+### 🔗 Semantic Class Similarity (Co-occurrence of Features)
 
-The correlation matrix visualizes how genres frequently appear together (e.g., _Action_ often co-occurs with _Adventure_). Understanding these dependencies is crucial for the **Joint Embedding** strategy.
+The correlation matrix (or Similarity Heatmap) visualizes how certain classes share visual features due to low-resolution (32 × 32). Significant overlap is observed in the Animal cluster (e.g., Cat often shares features with Dog) and the Vehicle cluster (Automobile vs. Truck). Understanding these ambiguities is crucial for interpreting model misclassifications.
 
-![Co-occurrence Heatmap](./public/multimodal/correlation_matrix.png)  
-_Figure 4: Heatmap illustrating the co-occurrence patterns between genres._
-
-### 📝 Textual Feature Analysis
-
-We analyzed the word count distribution of the movie plots. This guided our decision on the `max_length` parameter for the DistilBERT tokenizer to ensure context isn't truncated.
-
-![Text Length Distribution](./public/multimodal/text_length.png)  
-_Figure 5: Distribution of word counts in movie plot summaries._
+![Co-occurrence Heatmap](./public/similarity.png)  
+_Figure 5: Heatmap illustrating the semantic similarity and potential confusion patterns between classes._
 
 ---
 
