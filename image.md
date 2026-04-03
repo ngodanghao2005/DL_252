@@ -48,23 +48,23 @@ To understand the complexity of the CIFAR10 dataset, we conducted a comprehensiv
 
 Analysis of the 10 unique categories reveals a **perfectly balanced distribution**. Unlike many real-world datasets, each class contains exactly 5,000 training and 1,000 testing samples, eliminating the need for oversampling or class-weighted loss functionse.
 
-![Class Distribution Chart - Training](./public/training_samples.jpg)  
+![Class Distribution Chart - Training](./public/train_distribution.jpg)  
 _Figure 2: Balanced distribution of training samples across 10 object categories._
-![Class Distribution Chart - Testing](./public/training_samples.jpg)  
+![Class Distribution Chart - Testing](./public/test_distribution.jpg)  
 _Figure 3: Balanced distribution of testing samples across 10 object categories._
 
 ### 🏷️ Statistical Color Profiling (Pixel Distribution)
 
 Our analysis of raw pixel intensities across RGB channels reveals a dominant Blue channel (~70 intensity), suggesting a high frequency of cool-toned backgrounds (sky, water). A sharp spike at 255 across all channels indicates saturated regions or bright highlights.
 
-![RGB Pixel Intensity Distribution](./public/RGB.jpg)  
+![RGB Pixel Intensity Distribution](./public/pixel_distribution.jpg)  
 _Figure 4: RGB Pixel Intensity Distribution highlighting the non-uniformity across color channels._
 
 ### 🔗 Semantic Class Similarity (Co-occurrence of Features)
 
 The correlation matrix (or Similarity Heatmap) visualizes how certain classes share visual features due to low-resolution (32 × 32). Significant overlap is observed in the Animal cluster (e.g., Cat often shares features with Dog) and the Vehicle cluster (Automobile vs. Truck). Understanding these ambiguities is crucial for interpreting model misclassifications.
 
-![Co-occurrence Heatmap](./public/similarity.jpg)  
+![Co-occurrence Heatmap](./public/class_similarity_heatmap.jpg)  
 _Figure 5: Heatmap illustrating the semantic similarity and potential confusion patterns between classes._
 
 ---
