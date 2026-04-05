@@ -18,8 +18,9 @@ def evaluate(model, loader, criterion, device):
             all_labels.extend(labels.cpu().numpy())
 
     acc = accuracy_score(all_labels, all_preds)
-    f1 = f1_score(all_labels, all_preds, average='macro')
-    return total_loss / len(loader), acc, f1
+    f1_micro = f1_score(all_labels, all_preds, average='micro')
+    f1_macro = f1_score(all_labels, all_preds, average='macro')
+    return total_loss / len(loader), acc, f1_micro, f1_macro, np.array(all_labels), np.array(all_preds)
 
 
 def save_confusion_matrix(all_labels, all_preds, classes, name):
