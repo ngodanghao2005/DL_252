@@ -995,8 +995,8 @@
                     <i class="fas fa-copy"></i> Copy
                   </button>
                   <a
-                    href="/public/multimodal/label_textual_semantic_analysis.py"
-                    download="label_textual_semantic_analysis.py"
+                    href="/src/eda.py"
+                    download="eda.py"
                     class="code-tool-btn"
                     style="text-decoration: none; display: inline-block"
                   >
@@ -1004,83 +1004,103 @@
                   </a>
                 </div>
                 <textarea class="code-editor" readonly>
-import os
-import cv2
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import multiprocessing
-from collections import Counter
+import os
 from datasets import load_dataset
-from sklearn.preprocessing import MultiLabelBinarizer
-from PIL import Image
-from tqdm import tqdm
+from sklearn.metrics.pairwise import cosine_similarity
 
-# Fix for DecompressionBomb and Windows ResourceTracker errors
-Image.MAX_IMAGE_PIXELS = None 
+os.makedirs("results", exist_ok=True)
 
-# 1. LOAD DATASET
-print("Loading MM-IMDb dataset...")
-multiprocessing.set_start_method("spawn", force=True)
-ds = load_dataset("sxj1215/mmimdb", split='train', num_proc=1)
-df = pd.DataFrame(ds)
+print(">>> Loading CIFAR-10 dataset...")
+dataset = load_dataset("uoft-cs/cifar10")
+classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
-# 2. DATA PARSING
-def parse_content(messages):
-    try:
-        user_msg = messages[0]['content']
-        plot = user_msg.split("Plot: ")[1].split("\nNote")[0].strip()
-        genres = messages[1]['content'].split(", ")
-        return plot, genres
-    except:
-        return None, None
+def plot_distribution(split_name, title):
+    labels = list(dataset[split_name]['label'])
 
-print("Parsing all genres and plots...")
-df[['plot_clean', 'genres_clean']] = df['messages'].apply(lambda x: pd.Series(parse_content(x)))
-df = df.dropna(subset=['plot_clean', 'genres_clean'])
+    df = pd.DataFrame(labels, columns=['label'])
+    counts = df['label'].value_counts().sort_index()
 
-# --- 3. ALL GENRES DISTRIBUTION ---
-all_genres = [g for sublist in df['genres_clean'] for g in sublist]
-genre_counts = Counter(all_genres)
-genre_df = pd.DataFrame(genre_counts.items(), columns=['Genre', 'Count']).sort_values('Count', ascending=False)
+    plt.figure(figsize=(12, 6))
+    ax = sns.barplot(x=[classes[i] for i in counts.index], y=counts.values, palette='magma')
 
-plt.figure(figsize=(12, 10))
-sns.barplot(data=genre_df, x='Count', y='Genre', hue='Genre', palette='viridis', legend=False)
-plt.title('Figure 1: Full Genre Distribution (All 26+ Classes)')
-plt.xlabel('Number of Samples')
-plt.show()
+    plt.title(title, fontsize=15)
+    plt.xlabel('Class Name', fontsize=12)
+    plt.ylabel('Number of Samples', fontsize=12)
+    plt.ylim(0, max(counts.values) * 1.1)
 
-# --- 4. MULTI-LABEL ANALYSIS ---
-df['num_genres'] = df['genres_clean'].apply(len)
-plt.figure(figsize=(8, 5))
-sns.countplot(x='num_genres', data=df, palette='magma')
-plt.title('Figure 2: Number of Genres per Movie')
-plt.xlabel('Label Count')
-plt.ylabel('Frequency')
-plt.show()
+    for p in ax.patches:
+        ax.annotate(f'{int(p.get_height())}', (p.get_x() + p.get_width() / 2., p.get_height()),
+                    ha='center', va='center', xytext=(0, 10), textcoords='offset points')
 
-# --- 5. CO-OCCURRENCE HEATMAP (Degree of Difficulty) ---
-mlb = MultiLabelBinarizer()
-genre_bin = mlb.fit_transform(df['genres_clean'])
-genre_bin_df = pd.DataFrame(genre_bin, columns=mlb.classes_)
+    plt.savefig(f"{split_name}_distribution.png")
+    plt.show()
+    
+def plot_statistical_color_profile(dataset):
+    images = np.array(dataset['img'])
 
-plt.figure(figsize=(14, 10))
-sns.heatmap(genre_bin_df.corr(), annot=False, cmap='coolwarm', center=0)
-plt.title('Figure 3: Genre Correlation Matrix (Co-occurrence)')
-plt.show()
+    colors = ('red', 'green', 'blue')
+    plt.figure(figsize=(10, 6))
 
-# --- 6. TEXT LENGTH ANALYSIS ---
-df['plot_word_count'] = df['plot_clean'].apply(lambda x: len(x.split()))
-plt.figure(figsize=(10, 5))
-sns.histplot(df['plot_word_count'], bins=50, kde=True, color='teal')
-plt.title('Figure 4: Plot Word Count Distribution')
-plt.xlabel('Number of Words')
-plt.show()
+    for i, color in enumerate(colors):
+        hist, bin_edges = np.histogram(images[:, :, :, i], bins=256, range=(0, 255))
 
-print(f"\n✅ Total Rows: {len(df)}")
-print(f"✅ Unique Genres: {len(mlb.classes_)}")
-print(f"✅ Avg Genres per Movie: {df['num_genres'].mean():.2f}")
+        plt.plot(bin_edges[0:-1], hist, color=color, label=f'{color.capitalize()} channel', linewidth=1.5)
+
+        channel_mean = np.mean(images[:, :, :, i])
+        print(f"{color.capitalize()} Channel Mean: {channel_mean:.2f}")
+
+    plt.title("Figure 3: CIFAR-10 Raw Pixel Intensity Distribution", fontsize=12)
+    plt.xlabel("Pixel Value (0-255)")
+    plt.ylabel("Frequency (Number of Pixels)")
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    plt.savefig("results/pixel_distribution.png", dpi=300, bbox_inches='tight')
+    plt.show()
+    
+def plot_semantic_class_similarity(dataset, classes):
+    class_means = []
+
+    print("Calculating average feature vectors per class...")
+    for i in range(10):
+        # Lọc ảnh thuộc lớp i và làm phẳng (flatten) thành vector 3072 chiều (32x32x3)
+        class_indices = [idx for idx, label in enumerate(dataset['label']) if label == i]
+        class_images = np.array(dataset['img'])[class_indices]
+
+        # Flatten: (N, 32, 32, 3) -> (N, 3072)
+        flattened_images = class_images.reshape(len(class_images), -1)
+
+        class_means.append(np.mean(flattened_images, axis=0))
+
+    similarity_matrix = cosine_similarity(class_means)
+
+    plt.figure(figsize=(12, 10))
+    sns.heatmap(similarity_matrix, annot=True, fmt='.3f', cmap='magma',
+                xticklabels=classes, yticklabels=classes,
+                cbar_kws={'label': 'Cosine Similarity Score'})
+
+    plt.title("Figure 4: Heatmap of Semantic Similarity Between CIFAR-10 Classes", fontsize=14)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    plt.savefig("results/class_similarity_heatmap.png", dpi=300)
+    plt.show()
+    
+if __name__ == "__main__":
+    # 1. Distribution
+    plot_distribution('train', 'Class Distribution: CIFAR-10 Training Set')
+    
+    # 2. Color Profile (Dùng tập train để đại diện)
+    plot_statistical_color_profile(dataset['train'])
+    
+    # 3. Semantic Similarity
+    plot_semantic_class_similarity(dataset['train'], classes)
+    
+    print(">>> EDA Complete! Check the 'results/' folder for images.")
                 </textarea>
               </div>
             </div>
@@ -1139,14 +1159,14 @@ print(f"✅ Avg Genres per Movie: {df['num_genres'].mean():.2f}")
 
             <div class="toggle-item is-open">
               <button class="toggle-btn" type="button">
-                <span>Multi-label Characteristics</span>
+                <span>Statistical Color Profiling (Pixel Distribution)</span>
                 <i class="fas fa-chevron-down"></i>
               </button>
               <div class="toggle-content">
                 <div class="tutorial-box">
                   <h4>
                     <span
-                      ><i class="fas fa-tags"></i> Statistical Color Profiling (Pixel Distribution)</span
+                      ><i class="fas fa-tags"></i> Pixel Analysis</span
                     >
                     <i class="fas fa-chevron-down tutorial-toggle-icon"></i>
                   </h4>
@@ -1239,25 +1259,13 @@ print(f"✅ Avg Genres per Movie: {df['num_genres'].mean():.2f}")
                 <div>
                   <div>
                     <h4>Code Snippet (Data Ingestion)</h4>
+                    
                     <div class="code-demo-block">
-                      <div class="code-tools">
-                        <button
-                          class="code-tool-btn"
-                          type="button"
-                          data-action="copy"
-                        >
-                          <i class="fas fa-copy"></i> Copy
-                        </button>
-                        <a
-                          href="/public/multimodal/download_data.py"
-                          download="download_data.py"
-                          class="code-tool-btn"
-                          style="text-decoration: none; display: inline-block"
-                        >
-                          <i class="fas fa-download"></i> Download
-                        </a>
-                      </div>
-                      <textarea class="code-editor" readonly>
+                <textarea
+                  class="code-editor"
+                  readonly
+                  style="min-height: 260px"
+                >
 import os
 from datasets import load_dataset
 from torch.utils.data import DataLoader, random_split
@@ -1313,8 +1321,8 @@ train_dataset = CIFAR10Dataset(train_raw, transform=get_train_transforms())
 train_set, val_set = random_split(train_dataset, [45000, 5000])
 
 print(f">>> Success! Data partitioned: 45k Train | 5k Val | 10k Test")
-                </textarea
-                      >
+                </textarea>
+              </div>
                     </div>
                   </div>
 
@@ -1439,29 +1447,12 @@ train_l_vit, val_l_vit, test_l_vit = get_dataloaders(train_data, test_data, t_vi
           <strong>(μ, σ) = (0.485, 0.456, 0.406)</strong> to maintain compatibility with the pre-trained backbone.
                 </li>
               </ul>
-
+              
               <div class="code-demo-block">
-                <div class="code-tools">
-                  <button
-                    class="code-tool-btn"
-                    type="button"
-                    data-action="copy"
-                  >
-                    <i class="fas fa-copy"></i> Copy
-                  </button>
-                  <a
-                    href="/public/multimodal/split_data_and_dataloader.py"
-                    download="split_data_and_dataloader.py"
-                    class="code-tool-btn"
-                    style="text-decoration: none; display: inline-block"
-                  >
-                    <i class="fas fa-download"></i> Download
-                  </a>
-                </div>
                 <textarea
                   class="code-editor"
                   readonly
-                  style="min-height: 310px"
+                  style="min-height: 260px"
                 >
 import torch
 from torchvision import transforms
@@ -1692,29 +1683,6 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BATCH_SIZE = 64
 EPOCHS = 10
 
-
-def plot_error_per_class(all_labels, all_preds, classes):
-    cm = confusion_matrix(all_labels, all_preds)
-    # Tính False Negatives (bỏ lỡ) và False Positives (đoán sai)
-    fn = np.sum(cm, axis=1) - np.diag(cm)
-    fp = np.sum(cm, axis=0) - np.diag(cm)
-
-    x = np.arange(len(classes))
-    width = 0.35
-
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(x - width / 2, fn, width, label='Missed (False Negative)', color='#ff7f7f')
-    ax.bar(x + width / 2, fp, width, label='Wrongly Predicted (False Positive)', color='#7fbfff')
-
-    ax.set_ylabel('Number of Critical Errors')
-    ax.set_title('Analysis of Prediction Errors per Class')
-    ax.set_xticks(x)
-    ax.set_xticklabels(classes, rotation=45)
-    ax.legend()
-    plt.tight_layout()
-    plt.savefig("results/error_per_class.png", dpi=300)
-    plt.show()
-
 # ========================
 # DATALOADER
 # ========================
@@ -1768,102 +1736,6 @@ def train_model(model, train_loader, val_loader, name, lr):
     classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
     plot_error_per_class(best_labels, best_preds, classes)
     return best_acc, corresponding_macro_f1, corresponding_micro_f1
-
-def plot_distribution(split_name, title):
-    # Lấy nhãn từ dataset
-    labels = list(dataset[split_name]['label'])
-
-    # Đếm số lượng mẫu cho mỗi lớp
-    df = pd.DataFrame(labels, columns=['label'])
-    counts = df['label'].value_counts().sort_index()
-
-    # Vẽ biểu đồ
-    plt.figure(figsize=(12, 6))
-    ax = sns.barplot(x=[classes[i] for i in counts.index], y=counts.values, palette='magma')
-
-    # Thêm tiêu đề và nhãn
-    plt.title(title, fontsize=15)
-    plt.xlabel('Class Name', fontsize=12)
-    plt.ylabel('Number of Samples', fontsize=12)
-    plt.ylim(0, max(counts.values) * 1.1)  # Tạo khoảng trống phía trên để hiển thị số
-
-    # Hiển thị số lượng cụ thể trên mỗi cột
-    for p in ax.patches:
-        ax.annotate(f'{int(p.get_height())}', (p.get_x() + p.get_width() / 2., p.get_height()),
-                    ha='center', va='center', xytext=(0, 10), textcoords='offset points')
-
-    plt.savefig(f"{split_name}_distribution.png")
-    plt.show()
-
-
-def plot_semantic_class_similarity(dataset, classes):
-    """
-    Tính toán và trực quan hóa độ tương đồng ngữ nghĩa giữa các lớp
-    dựa trên vector đặc trưng trung bình của ảnh thô.
-    """
-    class_means = []
-
-    print("Calculating average feature vectors per class...")
-    for i in range(10):
-        # Lọc ảnh thuộc lớp i và làm phẳng (flatten) thành vector 3072 chiều (32x32x3)
-        class_indices = [idx for idx, label in enumerate(dataset['label']) if label == i]
-        class_images = np.array(dataset['img'])[class_indices]
-
-        # Flatten: (N, 32, 32, 3) -> (N, 3072)
-        flattened_images = class_images.reshape(len(class_images), -1)
-
-        # Tính vector trung bình của lớp
-        class_means.append(np.mean(flattened_images, axis=0))
-
-    # Tính Cosine Similarity giữa 10 vector trung bình (Ma trận 10x10)
-    similarity_matrix = cosine_similarity(class_means)
-
-    # Trực quan hóa bằng Heatmap
-    plt.figure(figsize=(12, 10))
-    sns.heatmap(similarity_matrix, annot=True, fmt='.3f', cmap='magma',
-                xticklabels=classes, yticklabels=classes,
-                cbar_kws={'label': 'Cosine Similarity Score'})
-
-    plt.title("Figure 4: Heatmap of Semantic Similarity Between CIFAR-10 Classes", fontsize=14)
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-
-    # Lưu file cho GitHub README
-    plt.savefig("results/class_similarity_heatmap.png", dpi=300)
-    plt.show()
-
-
-def plot_statistical_color_profile(dataset):
-    """
-    Phân tích thống kê phân phối pixel trên 3 kênh màu RGB của dữ liệu thô.
-    """
-    # Chuyển đổi list ảnh thành numpy array (N, H, W, C)
-    # CIFAR-10 có 50,000 ảnh 32x32x3
-    images = np.array(dataset['img'])
-
-    colors = ('red', 'green', 'blue')
-    plt.figure(figsize=(10, 6))
-
-    for i, color in enumerate(colors):
-        # Tính toán histogram cho từng kênh màu (0-255)
-        hist, bin_edges = np.histogram(images[:, :, :, i], bins=256, range=(0, 255))
-
-        # Vẽ đường biểu diễn mật độ
-        plt.plot(bin_edges[0:-1], hist, color=color, label=f'{color.capitalize()} channel', linewidth=1.5)
-
-        # Tính toán Mean của từng kênh để làm insight
-        channel_mean = np.mean(images[:, :, :, i])
-        print(f"{color.capitalize()} Channel Mean: {channel_mean:.2f}")
-
-    plt.title("Figure 3: CIFAR-10 Raw Pixel Intensity Distribution", fontsize=12)
-    plt.xlabel("Pixel Value (0-255)")
-    plt.ylabel("Frequency (Number of Pixels)")
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-
-    # Lưu file để chèn vào README/Slide
-    plt.savefig("results/pixel_distribution.png", dpi=300, bbox_inches='tight')
-    plt.show()
 
 # ========================
 # MAIN
