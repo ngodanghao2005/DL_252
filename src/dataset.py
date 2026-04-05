@@ -1,6 +1,5 @@
 import torch
 from torchvision import transforms
-from datasets import load_dataset
 
 # ========================
 # CUSTOM DATASET WRAPPER
@@ -22,10 +21,6 @@ class CIFAR10Dataset(torch.utils.data.Dataset):
         return image, label
 
 def get_transforms():
-    # CNN giữ nguyên resolution 32x32
-    # ========================
-    # TRANSFORMS
-    # ========================
     transform_cnn = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
@@ -38,6 +33,7 @@ def get_transforms():
         transforms.Resize((224, 224)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
     ])
     return transform_cnn, transform_vit
