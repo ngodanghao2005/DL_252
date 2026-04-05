@@ -978,32 +978,13 @@
 
         <div class="content-box analysis-hub">
           <h3>Label Semantic Analysis</h3>
-
-          <div class="toggle-list">
-            <div class="toggle-item">
-              <button class="toggle-btn" type="button">
-                <span> Code </span>
-                <i class="fas fa-chevron-down"></i>
-              </button>
-              <div class="toggle-content">
-                <div class="code-tools">
-                  <button
-                    class="code-tool-btn"
-                    type="button"
-                    data-action="copy"
-                  >
-                    <i class="fas fa-copy"></i> Copy
-                  </button>
-                  <a
-                    href="/src/eda.py"
-                    download="eda.py"
-                    class="code-tool-btn"
-                    style="text-decoration: none; display: inline-block"
-                  >
-                    <i class="fas fa-download"></i> Download
-                  </a>
-                </div>
-                <textarea class="code-editor" readonly>
+          
+          <div class="code-demo-block">
+                <textarea
+                  class="code-editor"
+                  readonly
+                  style="min-height: 260px"
+                >
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -1133,7 +1114,7 @@ if __name__ == "__main__":
                   </p>
                 </div>
                 <p>
-                  As we can see in Figure 1 and 2, the horizontal 'flat' line across all bars confirms that our dataset is perfectly balanced. This provides a solid foundation for fair evaluation across all organic and inorganic categories.
+                  As we can see in Figure 2 and 3, the horizontal 'flat' line across all bars confirms that our dataset is perfectly balanced. This provides a solid foundation for fair evaluation across all organic and inorganic categories.
                 </p>
                 <div class="image-container">
                   <img
@@ -1247,92 +1228,6 @@ if __name__ == "__main__":
       <section id="system-overview">
         <h2 class="section-title">3. System Overview</h2>
 
-        <div class="content-box">
-          <div class="toggle-list">
-            <div class="toggle-item">
-              <button class="toggle-btn" type="button">
-                <span>Dataset Integration & Split Management</span>
-                <i class="fas fa-chevron-down"></i>
-              </button>
-              <div class="toggle-content">
-
-                <div>
-                  <div>
-                    <h4>Code Snippet (Data Ingestion)</h4>
-                    
-                    <div class="code-demo-block">
-                <textarea
-                  class="code-editor"
-                  readonly
-                  style="min-height: 260px"
-                >
-import os
-from datasets import load_dataset
-from torch.utils.data import DataLoader, random_split
-
-class CIFAR10Dataset(torch.utils.data.Dataset):
-    def __init__(self, hf_dataset, transform=None):
-        self.dataset = hf_dataset
-        self.transform = transform
-
-    def __len__(self):
-        return len(self.dataset)
-
-    def __getitem__(self, idx):
-        item = self.dataset[idx]
-        image = item["img"]   # PIL Image
-        label = item["label"]
-        if self.transform:
-            image = self.transform(image)
-        return image, label
-        
-def get_transforms():
-    transform_cnn = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465),
-                             (0.2470, 0.2435, 0.2616))
-    ])
-
-    transform_vit = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])
-    ])
-    return transform_cnn, transform_vit
-
-# 1. Load Dataset from Hugging Face
-print(">>> Loading CIFAR-10 dataset...")
-ds = load_dataset("uoft-cs/cifar10")
-
-# 2. Access Splits
-train_raw = ds['train'] # 50,000 samples
-test_raw = ds['test']   # 10,000 samples
-
-# 3. Custom Dataset Wrapper (Conceptual)
-# This class handles PIL to Tensor conversion and Normalization
-train_dataset = CIFAR10Dataset(train_raw, transform=get_train_transforms())
-
-# 4. Validation Split Construction
-# We carve out 10% (5,000 samples) for unbiased evaluation
-train_set, val_set = random_split(train_dataset, [45000, 5000])
-
-print(f">>> Success! Data partitioned: 45k Train | 5k Val | 10k Test")
-                </textarea>
-              </div>
-                    </div>
-                  </div>
-
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="content-box analysis-hub">
           <h3>Interactive Training Pipeline</h3>
 
@@ -1342,18 +1237,8 @@ print(f">>> Success! Data partitioned: 45k Train | 5k Val | 10k Test")
               type="button"
               data-pipeline-step="input"
             >
-              <span class="pipeline-step-title">Input</span>
-              <span class="pipeline-step-sub">Image (CIFAR10)</span>
-            </button>
-            <div class="pipeline-arrow"><i class="fas fa-arrow-right"></i></div>
-
-            <button
-              class="pipeline-step"
-              type="button"
-              data-pipeline-step="preprocess"
-            >
-              <span class="pipeline-step-title">Pre-process</span>
-              <span class="pipeline-step-sub">Normalization + Augmentation</span>
+              <span class="pipeline-step-title">Input + Pre-process</span>
+              <span class="pipeline-step-sub">Image (CIFAR10) & (Normalization + Augmentation)</span>
             </button>
             <div class="pipeline-arrow"><i class="fas fa-arrow-right"></i></div>
 
@@ -1379,75 +1264,25 @@ print(f">>> Success! Data partitioned: 45k Train | 5k Val | 10k Test")
 
           <div class="pipeline-panels" id="pipeline-panels-3">
             <div class="pipeline-panel is-active" data-pipeline-panel="input">
-              <h4><i class="fas fa-inbox"></i> Input (CIFAR10)</h4>
+              <h4><i class="fas fa-inbox"></i> Input + Pre-process</h4>
               <p>
-                In this initial stage, the system retrieves and structures the raw visual information required for single-label image classification.
+                This stage establishes a robust flow from raw data ingestion to model-ready tensors. By integrating Data Ingestion and Pre-processing, we ensure that each image is dynamically transformed according to the specific architectural requirements of the chosen model.
               </p>
               <ul>
                 <li>
-                  <strong>Single-label Encoding:</strong> Unlike multi-label datasets, each CIFAR-10 image belongs to exactly one of the 10 mutually exclusive categories. Labels are maintained as integer indices (0-9) which are later transformed into One-hot vectors (implicitly via CrossEntropyLoss) during the training phase.
+                  <strong>Dataset Integration:</strong> We utilize the Hugging Face <code>datasets</code> library to stream the CIFAR-10 dataset directly, enabling efficient handling of 60,000 (32 x 32) images.
                 </li>
                 <li>
-                  <strong>Visual Input:</strong> Raw 32 x 32 images are streamed directly from the Hugging Face hub. These images are processed as PIL objects before being converted into numerical tensors. This provides the spatial data necessary for the ResNet50 and ViT backbones to capture low-level features like edges and textures.
+                  <strong>Split Management:</strong> To ensure unbiased performance monitoring, the 50,000-image training set is partitioned into a 90% Training subset and a 10% Validation subset. The 10,000-image test set remains isolated for final benchmarking.
                 </li>
-                <li>
-                  <strong>Data Partitioning:</strong> The dataset is split into Training, Validation (10%), and Testing sets. This ensures that the model is optimized on seen data but evaluated on completely unseen samples to verify its generalization capability.
-                </li>
+                    <li>
+                    <strong>ResNet50 (CNN):</strong> Employs Random Cropping and Horizontal Flipping for spatial augmentation, followed by normalization using CIFAR-10 specific statistics.
+                  </li>
+                  <li>
+                    <strong>ViT-Tiny (Transformer):</strong> Upscales images to 224 x 224 to align with pre-trained patch embeddings and utilizes ImageNet-1K normalization parameters.
+                  </li>
               </ul>
 
-              <div class="code-demo-block">
-                <textarea
-                  class="code-editor"
-                  readonly
-                  style="min-height: 260px"
-                >
-# --- DATA INGESTION PIPELINE ---
-# 1. Fetching raw data from Hugging Face Hub
-dataset = load_dataset("uoft-cs/cifar10")
-train_data, test_data = dataset["train"], dataset["test"]
-
-# 2. Initializing dual-stream transformations
-t_cnn, t_vit = get_transforms()
-
-# 3. Constructing specialized DataLoaders for each architecture
-# This ensures ResNet50 gets 32x32 inputs while ViT-Tiny gets 224x224 inputs
-train_l, val_l, test_l = get_dataloaders(train_data, test_data, t_cnn)
-train_l_vit, val_l_vit, test_l_vit = get_dataloaders(train_data, test_data, t_vit)
-                </textarea>
-              </div>
-            </div>
-
-            <div class="pipeline-panel" data-pipeline-panel="preprocess">
-              <h4>
-                <i class="fas fa-filter"></i> Pre-process (Normalization + Augmentation)
-              </h4>
-              <p>
-                In this stage, raw images are transformed into optimized tensors to ensure numerical stability and increase the model's ability to generalize across unseen data.
-              </p>
-
-              <ul>
-                <li>
-                  <strong>Per-Channel Normalization:</strong> We apply a global mean and standard deviation (μ, σ) 
-            subtraction across the RGB channels. This centers the data around zero, 
-            preventing <strong>vanishing or exploding gradients</strong> 
-            and significantly accelerating model convergence.
-                </li>
-                <li>
-                  <strong>Data Augmentation (Training Only):</strong> To prevent overfitting on the 45,000 training samples, we employ Random Horizontal Flips and Random Crops. This artificially expands the dataset by teaching the model that a "Cat" is still a "Cat" even if mirrored or slightly shifted.
-                </li>
-                <li>
-                  <strong>Data Partitioning:</strong> The dataset is split into Training, Validation (10%), and Testing sets. This ensures that the model is optimized on seen data but evaluated on completely unseen samples to verify its generalization capability.
-                </li>
-                <li>
-                  <strong>ResNet50 Stream (Native 32x32):</strong> Applied <code>RandomCrop(32, padding=4)</code> and <code>RandomHorizontalFlip()</code> for stochastic augmentation. Images are normalized using CIFAR-10 specific statistics 
-          <strong>(μ, σ) = (0.4914, 0.4822, 0.4465)</strong> to stabilize gradient flow.
-                </li>
-                <li>
-                  <strong>ViT-Tiny Stream (Upscaled 224x224):</strong> Images are upsampled to 224x224 to align with the Transformer's patch embedding logic. We use <strong>ImageNet-standard normalization</strong> 
-          <strong>(μ, σ) = (0.485, 0.456, 0.406)</strong> to maintain compatibility with the pre-trained backbone.
-                </li>
-              </ul>
-              
               <div class="code-demo-block">
                 <textarea
                   class="code-editor"
@@ -1457,54 +1292,26 @@ train_l_vit, val_l_vit, test_l_vit = get_dataloaders(train_data, test_data, t_vi
 import torch
 from torchvision import transforms
 from datasets import load_dataset
+from torch.utils.data import DataLoader, random_split
+from dataset import CIFAR10Dataset, get_transforms
+from train import get_dataloaders
 
-# ========================
-# CUSTOM DATASET WRAPPER
-# ========================
-class CIFAR10Dataset(torch.utils.data.Dataset):
-    def __init__(self, hf_dataset, transform=None):
-        self.dataset = hf_dataset
-        self.transform = transform
+BATCH_SIZE = 64
 
-    def __len__(self):
-        return len(self.dataset)
+raw_dataset = load_dataset("uoft-cs/cifar10")
+t_cnn, t_vit = get_transforms()
+train_data = raw_dataset["train"]
+test_data = raw_dataset["test"]
 
-    def __getitem__(self, idx):
-        item = self.dataset[idx]
-        image = item["img"]   # PIL Image
-        label = item["label"]
-        if self.transform:
-            image = self.transform(image)
-        return image, label
-
-def get_transforms():
-    # CNN giữ nguyên resolution 32x32
-    # ========================
-    # TRANSFORMS
-    # ========================
-    transform_cnn = transforms.Compose([
-        transforms.RandomCrop(32, padding=4),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465),
-                             (0.2470, 0.2435, 0.2616))
-    ])
-
-    transform_vit = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                             std=[0.229, 0.224, 0.225])
-    ])
-    return transform_cnn, transform_vit
+train_l, val_l, test_l = get_dataloaders(train_data, test_data, t_cnn)
+train_l_vit, val_l_vit, test_l_vit = get_dataloaders(train_data, test_data, t_vit)
                 </textarea>
               </div>
             </div>
 
             <div class="pipeline-panel" data-pipeline-panel="modelarchitecture">
               <h4>
-                <i class="fas fa-microchip"></i> Backbone & Classification Head)
+                <i class="fas fa-microchip"></i> Backbone & Classification Head
               </h4>
               <p>
                 We adopt a Transfer Learning strategy by utilizing state-of-the-art architectures pre-trained on the ImageNet-1K dataset. Each model consists of a feature-extracting Backbone and a specialized Classification Head.
@@ -1562,8 +1369,6 @@ class ViT(nn.Module):
         return self.vit(x)
 
 def get_model(model_name, num_classes=10, device="cuda"):
-    # MODELS
-    # ========================
     if model_name == "resnet50":
         model = CNN(num_classes)
     elif model_name == "vit":
@@ -1782,7 +1587,7 @@ if __name__ == "__main__":
               alt="Error Analysis"
             />
             <p class="caption">
-              Figure 1: Class-wise distribution of False Negatives (Missed) and False Positives (Wrongly Predicted) for the ResNet50 model.
+              Figure 6: Class-wise distribution of False Negatives (Missed) and False Positives (Wrongly Predicted) for the ResNet50 model.
             </p>
           </div>
           
@@ -1792,7 +1597,7 @@ if __name__ == "__main__":
               alt="Confusion Matrix"
             />
             <p class="caption">
-              Figure 1: Confusion Matrix of ResNet50 on the CIFAR-10 test set, illustrating inter-class misclassifications.
+              Figure 7: Confusion Matrix of ResNet50 on the CIFAR-10 test set, illustrating inter-class misclassifications.
             </p>
           </div>
           
