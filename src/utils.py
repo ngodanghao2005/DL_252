@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
 from sklearn.metrics import accuracy_score, f1_score, confusion_matrix
+import numpy as np
 
 
 def evaluate(model, loader, criterion, device):
